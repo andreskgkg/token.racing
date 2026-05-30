@@ -13,6 +13,7 @@ final class AppState: ObservableObject {
 
     private let store: LocalStore
     private let syncClient: SyncClient
+    private var todayMenuRows: [LeaderboardRow] = []
     var onMenuBarContentChange: (([MenuBarEntry]) -> Void)?
 
     init(store: LocalStore = LocalStore(), syncClient: SyncClient = SyncClient()) {
@@ -229,6 +230,14 @@ final class AppState: ObservableObject {
                 timeframe: selectedTimeframe,
                 backendURL: data.backendURL
             )
+            let todayLeaderboard = selectedTimeframe == .today
+                ? leaderboard
+                : try await syncClient.fetchLeaderboard(
+                    profile: syncedProfile,
+                    timeframe: .today,
+                    backendURL: data.backendURL
+                )
+            todayMenuRows = todayLeaderboard
             if !data.demoMode {
                 leaderboardRows = leaderboard
                 saveAndRefreshMenuTitle()
@@ -287,6 +296,11 @@ final class AppState: ObservableObject {
                 timeframe: selectedTimeframe,
                 currentBreakdown: breakdown
             )
+            todayMenuRows = DemoDataProvider.leaderboard(
+                profile: profile,
+                timeframe: .today,
+                currentBreakdown: self.breakdown(for: .today)
+            )
         } else {
             var localRows = [
                 LeaderboardRow(
@@ -315,9 +329,37 @@ final class AppState: ObservableObject {
                 localRows[index].rank = index + 1
             }
             leaderboardRows = localRows
+            todayMenuRows = localRowsForToday(profile: profile)
         }
 
         saveAndRefreshMenuTitle()
+    }
+
+    private func localRowsForToday(profile: UserProfile) -> [LeaderboardRow] {
+        let todayBreakdown = self.breakdown(for: .today)
+        var rows = [
+            LeaderboardRow(
+                id: profile.id,
+                handle: profile.handle,
+                avatarDataURL: profile.avatarDataURL,
+                totalTokens: todayBreakdown.values.reduce(0, +),
+                breakdown: todayBreakdown,
+                isCurrentUser: true
+            )
+        ]
+
+        rows.append(contentsOf: acceptedFriends.map {
+            LeaderboardRow(
+                id: $0.id,
+                handle: $0.handle,
+                avatarDataURL: $0.avatarDataURL,
+                totalTokens: 0,
+                breakdown: [:],
+                isCurrentUser: false
+            )
+        })
+
+        return rows
     }
 
     private func breakdown(for timeframe: Timeframe) -> [CodingApp: Int] {
@@ -387,24 +429,21 @@ final class AppState: ObservableObject {
     }
 
     private func menuBarEntries() -> [MenuBarEntry] {
-        let friendRows = leaderboardRows
-            .filter { !$0.isCurrentUser }
-            .prefix(4)
-
-        let rows = friendRows.isEmpty ? Array(leaderboardRows.prefix(1)) : Array(friendRows)
-        if !rows.isEmpty {
-            return rows.map {
-                MenuBarEntry(handle: $0.handle, avatarDataURL: $0.avatarDataURL, tokens: $0.totalTokens)
-            }
-        }
-
         guard let profile else {
             return []
         }
 
         let todayTokens = breakdown(for: .today).values.reduce(0, +)
+        let sourceRows = todayMenuRows.isEmpty ? localRowsForToday(profile: profile) : todayMenuRows
+        let friendRows = sourceRows
+            .filter { !$0.isCurrentUser }
+            .sorted { $0.totalTokens > $1.totalTokens }
+            .prefix(3)
+
         return [
             MenuBarEntry(handle: profile.handle, avatarDataURL: profile.avatarDataURL, tokens: todayTokens)
-        ]
+        ] + friendRows.map {
+            MenuBarEntry(handle: $0.handle, avatarDataURL: $0.avatarDataURL, tokens: $0.totalTokens)
+        }
     }
 }
