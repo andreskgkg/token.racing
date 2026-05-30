@@ -212,6 +212,8 @@ struct UsageSourceRow: View {
                         apiKey = ""
                     }
                     .disabled(apiKey.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+
+                    CursorAPIKeyHelpView()
                 }
             }
         case .claudeCode, .codex:
@@ -241,6 +243,84 @@ struct UsageSourceRow: View {
             return ClaudeCodeUsageAdapter(settings: state.data.sourceSettings).explainDataSource()
         case .codex:
             return CodexUsageAdapter(settings: state.data.sourceSettings).explainDataSource()
+        }
+    }
+}
+
+struct CursorAPIKeyHelpView: View {
+    private let dashboardURL = URL(string: "https://cursor.com/dashboard")!
+    private let docsURL = URL(string: "https://cursor.com/docs/api")!
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack {
+                Text("How to find your Cursor API key")
+                    .font(.caption.weight(.bold))
+                Spacer()
+                Link("Open dashboard", destination: dashboardURL)
+                    .font(.caption)
+            }
+
+            VStack(spacing: 8) {
+                CursorAPIHelpStep(
+                    number: "1",
+                    title: "Open Cursor Dashboard",
+                    detail: "Go to cursor.com/dashboard and sign in with the team account that uses Cursor."
+                )
+                CursorAPIHelpStep(
+                    number: "2",
+                    title: "Go to Settings -> Advanced",
+                    detail: "In the team dashboard, open Settings, then scroll to Advanced."
+                )
+                CursorAPIHelpStep(
+                    number: "3",
+                    title: "Create an Admin API key",
+                    detail: "Find Admin API Keys, click Create New API Key, name it Token Racing, and copy it immediately."
+                )
+                CursorAPIHelpStep(
+                    number: "4",
+                    title: "Paste it here",
+                    detail: "Keys usually start with crsr_. Optional: add your Cursor account email to filter team usage to you."
+                )
+            }
+
+            HStack(alignment: .top, spacing: 8) {
+                Image(systemName: "info.circle")
+                    .foregroundStyle(.secondary)
+                Text("Only Cursor team admins can create Admin API keys. Personal Cursor accounts may not have this screen.")
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+                Spacer()
+                Link("Docs", destination: docsURL)
+                    .font(.caption2)
+            }
+        }
+        .padding(10)
+        .background(Color.secondary.opacity(0.08), in: RoundedRectangle(cornerRadius: 10))
+    }
+}
+
+struct CursorAPIHelpStep: View {
+    let number: String
+    let title: String
+    let detail: String
+
+    var body: some View {
+        HStack(alignment: .top, spacing: 9) {
+            Text(number)
+                .font(.caption2.weight(.bold))
+                .foregroundStyle(.white)
+                .frame(width: 18, height: 18)
+                .background(Color.accentColor, in: Circle())
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text(title)
+                    .font(.caption.weight(.semibold))
+                Text(detail)
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
         }
     }
 }
