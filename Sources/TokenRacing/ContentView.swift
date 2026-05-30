@@ -104,7 +104,6 @@ struct DashboardView: View {
             ScrollView(showsIndicators: false) {
                 VStack(alignment: .leading, spacing: 12) {
                     CurrentUserCard()
-                    BreakdownCard()
                     LeaderboardCard()
                     FriendsCard(friendInput: $friendInput)
                     PrivacyCard()
@@ -252,15 +251,6 @@ struct CurrentUserCard: View {
                     .padding(.horizontal, 13)
                     .padding(.vertical, 10)
                     .background(Color.accentColor.opacity(0.12), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
-                }
-
-                if state.demoMode {
-                    HStack(spacing: 6) {
-                        Image(systemName: "sparkles")
-                        Text("Demo Mode sample data")
-                    }
-                    .font(.caption)
-                    .foregroundStyle(.orange)
                 }
             }
         }

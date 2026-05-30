@@ -13,7 +13,7 @@ final class AppState: ObservableObject {
 
     private let store: LocalStore
     private let syncClient: SyncClient
-    var onMenuBarTitleChange: ((String) -> Void)?
+    var onMenuBarContentChange: ((String, String?) -> Void)?
 
     init(store: LocalStore = LocalStore(), syncClient: SyncClient = SyncClient()) {
         self.store = store
@@ -263,7 +263,7 @@ final class AppState: ObservableObject {
     private func rebuildLeaderboard() {
         guard let profile else {
             leaderboardRows = []
-            onMenuBarTitleChange?("🏁 0")
+            onMenuBarContentChange?("0", nil)
             return
         }
 
@@ -371,6 +371,10 @@ final class AppState: ObservableObject {
     private func saveAndRefreshMenuTitle() {
         store.save(data)
         let todayTokens = breakdown(for: .today).values.reduce(0, +)
-        onMenuBarTitleChange?("🏁 \(todayTokens.tokenAbbreviation)")
+        if let profile {
+            onMenuBarContentChange?(todayTokens.tokenAbbreviation, profile.avatarDataURL)
+        } else {
+            onMenuBarContentChange?("0", nil)
+        }
     }
 }

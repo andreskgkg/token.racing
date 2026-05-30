@@ -27,14 +27,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
         statusItem?.button?.target = self
         statusItem?.button?.action = #selector(togglePopover)
-        statusItem?.button?.title = "🏁 0"
+        updateMenuBarContent(tokens: "0", avatarDataURL: nil)
 
         popover.behavior = .transient
         popover.contentSize = NSSize(width: 400, height: 600)
         popover.contentViewController = NSHostingController(rootView: ContentView().environmentObject(state))
 
-        state.onMenuBarTitleChange = { [weak self] title in
-            self?.statusItem?.button?.title = title
+        state.onMenuBarContentChange = { [weak self] tokens, avatarDataURL in
+            self?.updateMenuBarContent(tokens: tokens, avatarDataURL: avatarDataURL)
         }
 
         Task {
@@ -51,5 +51,41 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             popover.show(relativeTo: button.bounds, of: button, preferredEdge: .minY)
             NSApp.activate(ignoringOtherApps: true)
         }
+    }
+
+    private func updateMenuBarContent(tokens: String, avatarDataURL: String?) {
+        guard let button = statusItem?.button else { return }
+
+        button.title = " \(tokens)"
+        button.image = menuBarImage(from: avatarDataURL)
+        button.imagePosition = .imageLeft
+        button.imageHugsTitle = true
+
+        if button.image == nil {
+            button.title = "🏁 \(tokens)"
+        }
+    }
+
+    private func menuBarImage(from avatarDataURL: String?) -> NSImage? {
+        guard let sourceImage = AvatarImageData.nsImage(from: avatarDataURL) else {
+            return nil
+        }
+
+        let size = NSSize(width: 18, height: 18)
+        let image = NSImage(size: size)
+        image.lockFocus()
+
+        let rect = NSRect(origin: .zero, size: size)
+        NSBezierPath(ovalIn: rect).addClip()
+        sourceImage.draw(in: rect, from: .zero, operation: .copy, fraction: 1)
+
+        NSColor.white.withAlphaComponent(0.65).setStroke()
+        let stroke = NSBezierPath(ovalIn: rect.insetBy(dx: 0.5, dy: 0.5))
+        stroke.lineWidth = 1
+        stroke.stroke()
+
+        image.unlockFocus()
+        image.isTemplate = false
+        return image
     }
 }
