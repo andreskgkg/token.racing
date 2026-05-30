@@ -340,7 +340,7 @@ struct LeaderboardRowView: View {
                     Text("#\(row.rank)")
                         .font(.caption.weight(.bold).monospacedDigit())
                         .foregroundStyle(row.isCurrentUser ? Color.accentColor : Color.secondary)
-                    Text("@\(row.handle)")
+                    Text(displayName)
                         .font(.callout.weight(row.isCurrentUser ? .bold : .semibold))
                 }
                 Text(appSummary)
@@ -363,6 +363,10 @@ struct LeaderboardRowView: View {
         CodingApp.allCases
             .map { "\($0.shortName) \(row.breakdown[$0, default: 0].tokenAbbreviation)" }
             .joined(separator: " / ")
+    }
+
+    private var displayName: String {
+        row.handle.contains(" ") ? row.handle : "@\(row.handle)"
     }
 }
 

@@ -8,13 +8,14 @@ APP_NAME="Token Racing"
 BUNDLE_DIR=".build/app/${APP_NAME}.app"
 CONTENTS_DIR="${BUNDLE_DIR}/Contents"
 MACOS_DIR="${CONTENTS_DIR}/MacOS"
+RESOURCES_DIR="${CONTENTS_DIR}/Resources"
 OUTPUT="${MACOS_DIR}/TokenRacing"
 SDKROOT="$(xcrun --sdk macosx --show-sdk-path)"
 ARCH="$(uname -m)"
 TARGET="${ARCH}-apple-macos13.0"
 
 rm -rf "$BUNDLE_DIR"
-mkdir -p "$MACOS_DIR"
+mkdir -p "$MACOS_DIR" "$RESOURCES_DIR"
 
 swiftc \
   -sdk "$SDKROOT" \
@@ -24,6 +25,10 @@ swiftc \
   -framework AppKit \
   -framework SwiftUI \
   -framework Security
+
+if [ -d "Resources" ]; then
+  ditto "Resources" "$RESOURCES_DIR"
+fi
 
 cat > "${CONTENTS_DIR}/Info.plist" <<'PLIST'
 <?xml version="1.0" encoding="UTF-8"?>

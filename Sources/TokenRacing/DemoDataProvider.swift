@@ -29,7 +29,7 @@ enum DemoDataProvider {
                 breakdown: currentBreakdown,
                 isCurrentUser: true
             ),
-            demoRow(handle: "maya", cursor: 18_300, claude: 83_100, codex: 7_700, multiplier: multiplier),
+            demoRow(handle: "Ally Bell", cursor: 18_300, claude: 83_100, codex: 7_700, multiplier: multiplier, avatarDataURL: allyAvatarDataURL()),
             demoRow(handle: "sam", cursor: 51_200, claude: 22_400, codex: 14_500, multiplier: multiplier),
             demoRow(handle: "nora", cursor: 9_900, claude: 40_200, codex: 31_800, multiplier: multiplier)
         ]
@@ -41,7 +41,14 @@ enum DemoDataProvider {
         return rows
     }
 
-    private static func demoRow(handle: String, cursor: Int, claude: Int, codex: Int, multiplier: Int) -> LeaderboardRow {
+    private static func demoRow(
+        handle: String,
+        cursor: Int,
+        claude: Int,
+        codex: Int,
+        multiplier: Int,
+        avatarDataURL: String? = nil
+    ) -> LeaderboardRow {
         let breakdown: [CodingApp: Int] = [
             .cursor: cursor * multiplier,
             .claudeCode: claude * multiplier,
@@ -51,16 +58,23 @@ enum DemoDataProvider {
         return LeaderboardRow(
             id: stableID(for: handle),
             handle: handle,
-            avatarDataURL: nil,
+            avatarDataURL: avatarDataURL,
             totalTokens: breakdown.values.reduce(0, +),
             breakdown: breakdown,
             isCurrentUser: false
         )
     }
 
+    private static func allyAvatarDataURL() -> String? {
+        guard let url = Bundle.main.url(forResource: "AllyBell", withExtension: "jpg") else {
+            return nil
+        }
+        return AvatarImageData.dataURL(from: url, maxPixelSize: 160)
+    }
+
     private static func stableID(for handle: String) -> UUID {
         switch handle {
-        case "maya":
+        case "Ally Bell":
             return UUID(uuidString: "00000000-0000-4000-8000-000000000001") ?? UUID()
         case "sam":
             return UUID(uuidString: "00000000-0000-4000-8000-000000000002") ?? UUID()
