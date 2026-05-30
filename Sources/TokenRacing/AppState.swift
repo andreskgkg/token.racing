@@ -13,7 +13,7 @@ final class AppState: ObservableObject {
 
     private let store: LocalStore
     private let syncClient: SyncClient
-    var onMenuBarContentChange: ((String, String?) -> Void)?
+    var onMenuBarContentChange: (([MenuBarEntry]) -> Void)?
 
     init(store: LocalStore = LocalStore(), syncClient: SyncClient = SyncClient()) {
         self.store = store
@@ -227,6 +227,7 @@ final class AppState: ObservableObject {
             )
             if !data.demoMode {
                 leaderboardRows = leaderboard
+                saveAndRefreshMenuTitle()
             }
             syncStatus = "Synced"
         } catch {
@@ -271,7 +272,7 @@ final class AppState: ObservableObject {
     private func rebuildLeaderboard() {
         guard let profile else {
             leaderboardRows = []
-            onMenuBarContentChange?("0", nil)
+            onMenuBarContentChange?([])
             return
         }
 
@@ -378,11 +379,28 @@ final class AppState: ObservableObject {
 
     private func saveAndRefreshMenuTitle() {
         store.save(data)
-        let todayTokens = breakdown(for: .today).values.reduce(0, +)
-        if let profile {
-            onMenuBarContentChange?(todayTokens.tokenAbbreviation, profile.avatarDataURL)
-        } else {
-            onMenuBarContentChange?("0", nil)
+        onMenuBarContentChange?(menuBarEntries())
+    }
+
+    private func menuBarEntries() -> [MenuBarEntry] {
+        let friendRows = leaderboardRows
+            .filter { !$0.isCurrentUser }
+            .prefix(4)
+
+        let rows = friendRows.isEmpty ? Array(leaderboardRows.prefix(1)) : Array(friendRows)
+        if !rows.isEmpty {
+            return rows.map {
+                MenuBarEntry(handle: $0.handle, avatarDataURL: $0.avatarDataURL, tokens: $0.totalTokens)
+            }
         }
+
+        guard let profile else {
+            return []
+        }
+
+        let todayTokens = breakdown(for: .today).values.reduce(0, +)
+        return [
+            MenuBarEntry(handle: profile.handle, avatarDataURL: profile.avatarDataURL, tokens: todayTokens)
+        ]
     }
 }

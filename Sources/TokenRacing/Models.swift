@@ -114,6 +114,12 @@ struct LeaderboardRow: Codable, Identifiable, Equatable {
     var rank: Int = 0
 }
 
+struct MenuBarEntry: Equatable {
+    var handle: String
+    var avatarDataURL: String?
+    var tokens: Int
+}
+
 struct AdapterAvailability: Codable, Equatable {
     var app: CodingApp
     var isAvailable: Bool

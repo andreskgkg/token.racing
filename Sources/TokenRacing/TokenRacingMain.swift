@@ -27,14 +27,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
         statusItem?.button?.target = self
         statusItem?.button?.action = #selector(togglePopover)
-        updateMenuBarContent(tokens: "0", avatarDataURL: nil)
+        updateMenuBarContent(entries: [])
 
         popover.behavior = .transient
         popover.contentSize = NSSize(width: 400, height: 600)
         popover.contentViewController = NSHostingController(rootView: ContentView().environmentObject(state))
 
-        state.onMenuBarContentChange = { [weak self] tokens, avatarDataURL in
-            self?.updateMenuBarContent(tokens: tokens, avatarDataURL: avatarDataURL)
+        state.onMenuBarContentChange = { [weak self] entries in
+            self?.updateMenuBarContent(entries: entries)
         }
 
         Task {
@@ -53,23 +53,45 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
     }
 
-    private func updateMenuBarContent(tokens: String, avatarDataURL: String?) {
+    private func updateMenuBarContent(entries: [MenuBarEntry]) {
         guard let button = statusItem?.button else { return }
 
-        button.title = " \(tokens)"
-        button.image = menuBarImage(from: avatarDataURL)
-        button.imagePosition = .imageLeft
-        button.imageHugsTitle = true
-
-        if button.image == nil {
-            button.title = "🏁 \(tokens)"
+        guard !entries.isEmpty else {
+            button.image = nil
+            button.attributedTitle = NSAttributedString(string: "")
+            button.title = "🏁 0"
+            return
         }
+
+        button.image = nil
+        button.title = ""
+        button.attributedTitle = menuBarTitle(for: entries)
     }
 
-    private func menuBarImage(from avatarDataURL: String?) -> NSImage? {
-        guard let sourceImage = AvatarImageData.nsImage(from: avatarDataURL) else {
-            return nil
+    private func menuBarTitle(for entries: [MenuBarEntry]) -> NSAttributedString {
+        let title = NSMutableAttributedString()
+        let textAttributes: [NSAttributedString.Key: Any] = [
+            .font: NSFont.systemFont(ofSize: 14, weight: .semibold),
+            .foregroundColor: NSColor.labelColor
+        ]
+
+        for (index, entry) in entries.enumerated() {
+            if index > 0 {
+                title.append(NSAttributedString(string: "   ", attributes: textAttributes))
+            }
+
+            let attachment = NSTextAttachment()
+            attachment.image = menuBarImage(handle: entry.handle, avatarDataURL: entry.avatarDataURL)
+            attachment.bounds = NSRect(x: 0, y: -4, width: 18, height: 18)
+            title.append(NSAttributedString(attachment: attachment))
+            title.append(NSAttributedString(string: " \(entry.tokens.tokenAbbreviation)", attributes: textAttributes))
         }
+
+        return title
+    }
+
+    private func menuBarImage(handle: String, avatarDataURL: String?) -> NSImage {
+        let sourceImage = AvatarImageData.nsImage(from: avatarDataURL)
 
         let size = NSSize(width: 18, height: 18)
         let image = NSImage(size: size)
@@ -77,7 +99,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         let rect = NSRect(origin: .zero, size: size)
         NSBezierPath(ovalIn: rect).addClip()
-        sourceImage.draw(in: rect, from: .zero, operation: .copy, fraction: 1)
+        if let sourceImage {
+            sourceImage.draw(in: rect, from: .zero, operation: .copy, fraction: 1)
+        } else {
+            NSColor.systemBlue.setFill()
+            rect.fill()
+            drawInitials(for: handle, in: rect)
+        }
 
         NSColor.white.withAlphaComponent(0.65).setStroke()
         let stroke = NSBezierPath(ovalIn: rect.insetBy(dx: 0.5, dy: 0.5))
@@ -87,5 +115,34 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         image.unlockFocus()
         image.isTemplate = false
         return image
+    }
+
+    private func drawInitials(for handle: String, in rect: NSRect) {
+        let initials = initials(for: handle)
+        let attributes: [NSAttributedString.Key: Any] = [
+            .font: NSFont.systemFont(ofSize: 7.5, weight: .bold),
+            .foregroundColor: NSColor.white
+        ]
+        let text = NSAttributedString(string: initials, attributes: attributes)
+        let textSize = text.size()
+        let textRect = NSRect(
+            x: rect.midX - textSize.width / 2,
+            y: rect.midY - textSize.height / 2,
+            width: textSize.width,
+            height: textSize.height
+        )
+        text.draw(in: textRect)
+    }
+
+    private func initials(for handle: String) -> String {
+        let parts = handle
+            .split(separator: " ")
+            .map { String($0.prefix(1)) }
+
+        if parts.count >= 2 {
+            return String(parts.prefix(2).joined()).uppercased()
+        }
+
+        return String(handle.prefix(2)).uppercased()
     }
 }
