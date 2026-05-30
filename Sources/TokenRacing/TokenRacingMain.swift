@@ -30,7 +30,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         statusItem?.button?.title = "🏁 0"
 
         popover.behavior = .transient
-        popover.contentSize = NSSize(width: 390, height: 620)
+        popover.contentSize = NSSize(width: 400, height: 600)
         popover.contentViewController = NSHostingController(rootView: ContentView().environmentObject(state))
 
         state.onMenuBarTitleChange = { [weak self] title in
