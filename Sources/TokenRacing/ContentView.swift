@@ -21,6 +21,8 @@ struct OnboardingView: View {
     @EnvironmentObject private var state: AppState
     @State private var handle = ""
     @State private var demoMode = true
+    @State private var cursorAPIKey = ""
+    @State private var cursorAccountEmail = ""
 
     var body: some View {
         VStack(alignment: .leading, spacing: 18) {
@@ -47,6 +49,24 @@ struct OnboardingView: View {
                         ))
                     }
 
+                    if state.enabledApps.contains(.cursor) {
+                        if state.apiKeyConnections[.cursor] == true {
+                            Label("Cursor API connected", systemImage: "checkmark.circle.fill")
+                                .font(.caption)
+                                .foregroundStyle(.green)
+                        } else {
+                            VStack(alignment: .leading, spacing: 8) {
+                                SecureField("Cursor Admin API key", text: $cursorAPIKey)
+                                    .textFieldStyle(.roundedBorder)
+                                TextField("Cursor account email, optional", text: $cursorAccountEmail)
+                                    .textFieldStyle(.roundedBorder)
+                                Text("Used locally to pull exact Cursor token usage. Stored in Keychain.")
+                                    .font(.caption2)
+                                    .foregroundStyle(.secondary)
+                            }
+                        }
+                    }
+
                     LabeledFieldTitle(number: "3", title: "Privacy")
                     Text("Raw logs and API keys stay on this Mac. Friends only see aggregate token counts.")
                         .font(.caption)
@@ -62,6 +82,10 @@ struct OnboardingView: View {
             Button {
                 state.createProfile(handle: handle)
                 state.setDemoMode(demoMode)
+                if !cursorAPIKey.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                    state.saveAPIConnection(app: .cursor, apiKey: cursorAPIKey, accountEmail: cursorAccountEmail)
+                    cursorAPIKey = ""
+                }
             } label: {
                 Text("Start Tracking")
                     .frame(maxWidth: .infinity)
@@ -103,9 +127,11 @@ struct DashboardView: View {
             ScrollView(showsIndicators: false) {
                 VStack(alignment: .leading, spacing: 12) {
                     CurrentUserCard()
+                    if state.enabledApps.contains(.cursor), state.apiKeyConnections[.cursor] != true {
+                        CursorAPIKeyCard()
+                    }
                     LeaderboardCard()
                     FriendsCard(friendInput: $friendInput)
-                    PrivacyCard()
                 }
                 .padding(.horizontal, 16)
                 .padding(.bottom, 14)
@@ -199,6 +225,39 @@ struct DashboardView: View {
         .padding(.horizontal, 16)
         .padding(.vertical, 10)
         .background(.regularMaterial)
+    }
+}
+
+struct CursorAPIKeyCard: View {
+    @EnvironmentObject private var state: AppState
+    @State private var apiKey = ""
+    @State private var accountEmail = ""
+
+    var body: some View {
+        CleanCard(title: "Cursor Usage") {
+            VStack(alignment: .leading, spacing: 10) {
+                Text("Connect your Cursor Admin API key to see exact token usage here.")
+                    .font(.callout.weight(.semibold))
+
+                SecureField("Cursor Admin API key", text: $apiKey)
+                    .textFieldStyle(.roundedBorder)
+
+                TextField("Cursor account email, optional", text: $accountEmail)
+                    .textFieldStyle(.roundedBorder)
+
+                HStack(alignment: .center, spacing: 10) {
+                    Button("Connect Cursor API") {
+                        state.saveAPIConnection(app: .cursor, apiKey: apiKey, accountEmail: accountEmail)
+                        apiKey = ""
+                    }
+                    .disabled(apiKey.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+
+                    Text("Key stays in macOS Keychain.")
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                }
+            }
+        }
     }
 }
 
