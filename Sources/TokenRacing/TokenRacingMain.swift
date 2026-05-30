@@ -28,7 +28,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
         statusItem?.button?.target = self
         statusItem?.button?.action = #selector(togglePopover)
-        updateMenuBarContent(entries: [])
 
         popover.behavior = .applicationDefined
         popover.contentSize = NSSize(width: 400, height: 600)
@@ -38,6 +37,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         state.onMenuBarContentChange = { [weak self] entries in
             self?.updateMenuBarContent(entries: entries)
         }
+        updateMenuBarContent(entries: state.currentMenuBarEntries())
 
         Task {
             await state.refreshAll()
@@ -82,7 +82,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         guard !entries.isEmpty else {
             button.image = nil
             button.attributedTitle = NSAttributedString(string: "")
-            button.title = "🏁 0"
+            button.title = "Token Racing"
             return
         }
 

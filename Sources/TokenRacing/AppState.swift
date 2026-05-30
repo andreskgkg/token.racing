@@ -113,6 +113,10 @@ final class AppState: ObservableObject {
         })
     }
 
+    func currentMenuBarEntries() -> [MenuBarEntry] {
+        menuBarEntries()
+    }
+
     func setProfileAvatarDataURL(_ avatarDataURL: String?) {
         guard data.profile != nil else { return }
         data.profile?.avatarDataURL = avatarDataURL
