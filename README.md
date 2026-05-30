@@ -76,7 +76,7 @@ Raw usage data and secrets must never leave the user's machine.
 
 Local only:
 
-- API keys, if a future adapter needs one.
+- API keys, stored only in macOS Keychain.
 - Raw logs and usage files.
 - Prompts and completions.
 - Source code and file names.
@@ -90,7 +90,7 @@ Synced to backend:
 - Friend graph and friend request status.
 - Aggregate token counts by app and timeframe.
 
-The Swift app includes `KeychainStore` for future adapters that may require API keys. No MVP adapter asks for an API key.
+The Swift app uses `KeychainStore` for API keys. The Cursor adapter can use a Cursor Admin API key, but the key never syncs to the backend.
 
 ## Data Model
 
@@ -126,7 +126,7 @@ Detected paths:
 - `~/Library/Application Support/Cursor/logs`
 - `~/.cursor`
 
-Current limitation: Cursor's exact local token ledger is not public/stable. The MVP does not infer or fabricate token usage from unrelated Cursor files. To enable extraction, choose a local JSON, JSONL, log, or folder in Settings.
+Cursor connects through the Cursor Admin API when the user provides an Enterprise/Admin API key in Settings. The key is stored only in macOS Keychain. Personal Cursor accounts do not currently expose a normal token-usage API, so the app does not fabricate Cursor usage when no API key is connected.
 
 ### Claude Code
 
@@ -135,7 +135,7 @@ Detected paths:
 - `~/.claude/projects`
 - `~/.claude`
 
-The adapter scans local JSON/JSONL files for explicit token fields such as `input_tokens`, `output_tokens`, `cache_creation_input_tokens`, `cache_read_input_tokens`, `prompt_tokens`, `completion_tokens`, `reasoning_tokens`, `cached_tokens`, or `total_tokens`.
+The adapter auto-scans local JSON/JSONL files for explicit token fields such as `input_tokens`, `output_tokens`, `cache_creation_input_tokens`, `cache_read_input_tokens`, `prompt_tokens`, `completion_tokens`, `reasoning_tokens`, `cached_tokens`, or `total_tokens`. No file picker or upload is required.
 
 ### Codex / OpenAI Codex
 
@@ -145,7 +145,7 @@ Detected paths:
 - `~/.config/openai`
 - `~/Library/Application Support/OpenAI`
 
-Current limitation: Codex local usage schemas vary by version. The MVP requires a user-selected local JSON, JSONL, log, or folder before it extracts token counts.
+The adapter auto-scans `~/.codex/sessions` when present. No file picker or upload is required.
 
 ## Demo Mode
 
@@ -194,7 +194,8 @@ It rejects no raw logs because there is no endpoint for raw logs.
 ## Current Limitations
 
 - The app is packaged as an unsigned local `.app` bundle. It is not notarized or distributed with an installer yet.
-- Cursor and Codex exact local token extraction need confirmation for each tool version, so they use safe user-selected file/folder extraction.
+- Cursor exact token extraction requires a Cursor Enterprise/Admin API key. Personal Cursor accounts do not currently expose an exact token API.
+- Claude Code local token logs may be approximate depending on the Claude Code version and what final usage fields are persisted.
 - The usage parser only counts explicit token fields in local JSON/JSONL/log files.
 - The backend is a simple MVP service and has no authentication beyond unguessable local UUIDs/invite codes.
 - Demo friends are local-only sample rows.

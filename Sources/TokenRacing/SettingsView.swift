@@ -158,29 +158,21 @@ struct ProfilePictureSection: View {
 struct UsageSourceRow: View {
     @EnvironmentObject private var state: AppState
     let app: CodingApp
+    @State private var apiKey = ""
+    @State private var accountEmail = ""
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Toggle(app.rawValue, isOn: Binding(
-                get: { state.enabledApps.contains(app) },
-                set: { state.setAppEnabled(app, enabled: $0) }
-            ))
-
+        VStack(alignment: .leading, spacing: 10) {
             HStack {
-                Text(state.customPaths[app] ?? "No custom file selected")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                    .lineLimit(1)
+                Toggle(app.rawValue, isOn: Binding(
+                    get: { state.enabledApps.contains(app) },
+                    set: { state.setAppEnabled(app, enabled: $0) }
+                ))
                 Spacer()
-                Button("Choose File/Folder") {
-                    choosePath()
-                }
-                if state.customPaths[app] != nil {
-                    Button("Clear") {
-                        state.setCustomPath(nil, for: app)
-                    }
-                }
+                connectionBadge
             }
+
+            connectionControls
 
             Text(explanation)
                 .font(.caption2)
@@ -188,6 +180,57 @@ struct UsageSourceRow: View {
         }
         .padding(12)
         .background(Color(nsColor: .controlBackgroundColor), in: RoundedRectangle(cornerRadius: 10))
+        .onAppear {
+            accountEmail = state.apiAccountEmails[app] ?? ""
+        }
+    }
+
+    @ViewBuilder
+    private var connectionControls: some View {
+        switch app {
+        case .cursor:
+            if state.apiKeyConnections[app] == true {
+                HStack {
+                    Text(state.apiAccountEmails[app].map { "Filtering to \($0)" } ?? "Connected to Cursor Admin API")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                    Spacer()
+                    Button("Disconnect") {
+                        state.removeAPIConnection(app: app)
+                        apiKey = ""
+                        accountEmail = ""
+                    }
+                }
+            } else {
+                VStack(alignment: .leading, spacing: 8) {
+                    SecureField("Cursor Admin API key", text: $apiKey)
+                        .textFieldStyle(.roundedBorder)
+                    TextField("Cursor account email, optional", text: $accountEmail)
+                        .textFieldStyle(.roundedBorder)
+                    Button("Connect Cursor API") {
+                        state.saveAPIConnection(app: app, apiKey: apiKey, accountEmail: accountEmail)
+                        apiKey = ""
+                    }
+                    .disabled(apiKey.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                }
+            }
+        case .claudeCode, .codex:
+            Text("Auto-detects local sessions. No upload, no picker, no API key.")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+        }
+    }
+
+    private var connectionBadge: some View {
+        let status = state.adapterStatuses[app]
+        let connected = status?.isAvailable == true
+
+        return Text(connected ? "Connected" : "Not found")
+            .font(.caption2.weight(.bold))
+            .foregroundStyle(connected ? Color.green : Color.secondary)
+            .padding(.horizontal, 8)
+            .padding(.vertical, 4)
+            .background((connected ? Color.green : Color.secondary).opacity(0.12), in: Capsule())
     }
 
     private var explanation: String {
@@ -198,17 +241,6 @@ struct UsageSourceRow: View {
             return ClaudeCodeUsageAdapter(settings: state.data.sourceSettings).explainDataSource()
         case .codex:
             return CodexUsageAdapter(settings: state.data.sourceSettings).explainDataSource()
-        }
-    }
-
-    private func choosePath() {
-        let panel = NSOpenPanel()
-        panel.canChooseFiles = true
-        panel.canChooseDirectories = true
-        panel.allowsMultipleSelection = false
-        panel.message = "Choose a local usage/log file or folder for \(app.rawValue). Raw contents never leave this Mac."
-        if panel.runModal() == .OK {
-            state.setCustomPath(panel.url?.path, for: app)
         }
     }
 }
