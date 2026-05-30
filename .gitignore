@@ -3,6 +3,7 @@
 DerivedData/
 backend/token-racing-db.json
 site/downloads/*.zip
+!site/downloads/Token-Racing.zip
 *.xcuserstate
 .DS_Store
 .vercel
