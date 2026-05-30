@@ -32,7 +32,7 @@ struct SettingsView: View {
                     VStack(alignment: .leading, spacing: 8) {
                         Text("Backend")
                             .font(.headline)
-                        TextField("http://127.0.0.1:8787", text: $backendURL)
+                        TextField(AppData.defaultBackendURL, text: $backendURL)
                             .textFieldStyle(.roundedBorder)
                             .onSubmit {
                                 state.setBackendURL(backendURL)

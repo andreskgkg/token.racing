@@ -192,9 +192,19 @@ final class SyncClient {
         }
 
         guard 200..<300 ~= httpResponse.statusCode else {
-            let message = String(data: data, encoding: .utf8) ?? "HTTP \(httpResponse.statusCode)"
+            let message = serverErrorMessage(from: data) ?? "HTTP \(httpResponse.statusCode)"
             throw SyncError.server(message)
         }
+    }
+
+    private func serverErrorMessage(from data: Data) -> String? {
+        if let payload = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+           let message = payload["error"] as? String ?? payload["message"] as? String {
+            return message
+        }
+
+        let raw = String(data: data, encoding: .utf8)?.trimmingCharacters(in: .whitespacesAndNewlines)
+        return raw?.isEmpty == false ? raw : nil
     }
 }
 

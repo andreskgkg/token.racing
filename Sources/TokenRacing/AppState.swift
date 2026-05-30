@@ -20,6 +20,10 @@ final class AppState: ObservableObject {
         self.store = store
         self.syncClient = syncClient
         data = store.load()
+        if data.backendURL == "http://127.0.0.1:8787" {
+            data.backendURL = AppData.defaultBackendURL
+            store.save(data)
+        }
         refreshAPIKeyConnections()
         rebuildLeaderboard()
     }

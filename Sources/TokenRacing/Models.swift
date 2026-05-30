@@ -141,6 +141,8 @@ struct UsageSourceSettings: Codable, Equatable {
 }
 
 struct AppData: Codable {
+    static let defaultBackendURL = "https://token.racing/api"
+
     var profile: UserProfile?
     var friends: [Friend]
     var usageEvents: [TokenUsageEvent]
@@ -155,7 +157,7 @@ struct AppData: Codable {
         usageEvents: [],
         sourceSettings: .empty,
         demoMode: true,
-        backendURL: "http://127.0.0.1:8787",
+        backendURL: defaultBackendURL,
         lastRefreshAt: nil
     )
 }

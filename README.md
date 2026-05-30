@@ -171,7 +171,7 @@ total=3175
 ## Friend And Share Flow
 
 - Pick a handle during onboarding.
-- Run the backend.
+- The app syncs to the hosted backend at `https://token.racing/api`.
 - Share the invite code shown in the popover.
 - Add a friend by handle or invite code.
 - Incoming requests can be accepted or declined.
@@ -191,11 +191,28 @@ The backend intentionally accepts only low-sensitivity aggregate data:
 
 It rejects no raw logs because there is no endpoint for raw logs.
 
+### Hosted Backend Setup
+
+The production backend is a Vercel API route backed by Supabase Postgres.
+
+1. Create a Supabase project.
+2. Run `supabase/schema.sql` in the Supabase SQL editor.
+3. Add these Vercel environment variables for production:
+
+```sh
+SUPABASE_URL=https://YOUR_PROJECT.supabase.co
+SUPABASE_SERVICE_ROLE_KEY=YOUR_SERVICE_ROLE_KEY
+```
+
+4. Redeploy Vercel.
+
+The service-role key is used only inside the Vercel API route. It is never shipped in the Mac app or browser JavaScript.
+
 ## Current Limitations
 
 - The app is packaged as an ad-hoc signed beta `.app` bundle. It is not notarized or distributed with a Developer ID installer yet, so downloaded builds may still need quarantine removal on macOS.
 - Cursor exact token extraction requires a Cursor Enterprise/Admin API key. Personal Cursor accounts do not currently expose an exact token API.
 - Claude Code local token logs may be approximate depending on the Claude Code version and what final usage fields are persisted.
 - The usage parser only counts explicit token fields in local JSON/JSONL/log files.
-- The backend is a simple MVP service and has no authentication beyond unguessable local UUIDs/invite codes.
+- The hosted backend has no user login yet; friend access is still scoped by unguessable local UUIDs/invite codes.
 - Demo friends are local-only sample rows.
