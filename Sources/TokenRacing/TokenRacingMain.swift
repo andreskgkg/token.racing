@@ -12,7 +12,7 @@ final class TokenRacingMain {
         let app = NSApplication.shared
         let delegate = AppDelegate()
         app.delegate = delegate
-        app.setActivationPolicy(.accessory)
+        app.setActivationPolicy(.regular)
         app.run()
     }
 }
@@ -21,6 +21,7 @@ final class TokenRacingMain {
 final class AppDelegate: NSObject, NSApplicationDelegate {
     private let state = AppState()
     private var statusItem: NSStatusItem?
+    private var mainWindow: NSWindow?
     private let popover = NSPopover()
 
     func applicationDidFinishLaunching(_ notification: Notification) {
@@ -32,6 +33,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         popover.behavior = .transient
         popover.contentSize = NSSize(width: 400, height: 600)
         popover.contentViewController = NSHostingController(rootView: ContentView().environmentObject(state))
+        showMainWindow()
 
         state.onMenuBarContentChange = { [weak self] entries in
             self?.updateMenuBarContent(entries: entries)
@@ -40,6 +42,27 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         Task {
             await state.refreshAll()
         }
+    }
+
+    func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {
+        showMainWindow()
+        return true
+    }
+
+    private func showMainWindow() {
+        if mainWindow == nil {
+            let controller = NSHostingController(rootView: ContentView().environmentObject(state))
+            let window = NSWindow(contentViewController: controller)
+            window.title = "Token Racing"
+            window.setContentSize(NSSize(width: 400, height: 600))
+            window.styleMask = [.titled, .closable, .miniaturizable]
+            window.isReleasedWhenClosed = false
+            window.center()
+            mainWindow = window
+        }
+
+        mainWindow?.makeKeyAndOrderFront(nil)
+        NSApp.activate(ignoringOtherApps: true)
     }
 
     @objc private func togglePopover() {
