@@ -69,15 +69,44 @@ final class CursorUsageAdapter: UsageAdapter {
     }
 
     private func fetchCursorUsageSince(date: Date, apiKey: String) async throws -> [TokenUsageEvent] {
-        let pageSize = 100
+        let pageSize = 25
+        let finalEndDate = Date()
+        var events: [TokenUsageEvent] = []
+        var windowStartDate = date
+
+        while windowStartDate <= finalEndDate {
+            let windowEndDate = min(
+                windowStartDate.addingTimeInterval(29 * 24 * 60 * 60),
+                finalEndDate
+            )
+            events.append(contentsOf: try await fetchCursorUsageWindow(
+                startDate: windowStartDate,
+                endDate: windowEndDate,
+                apiKey: apiKey,
+                pageSize: pageSize
+            ))
+
+            guard windowEndDate < finalEndDate else { break }
+            windowStartDate = windowEndDate.addingTimeInterval(0.001)
+        }
+
+        return events
+    }
+
+    private func fetchCursorUsageWindow(
+        startDate: Date,
+        endDate: Date,
+        apiKey: String,
+        pageSize: Int
+    ) async throws -> [TokenUsageEvent] {
         var page = 1
         var hasNextPage = true
         var events: [TokenUsageEvent] = []
 
         while hasNextPage, page <= 100 {
             let result = try await fetchCursorUsagePage(
-                startDate: date,
-                endDate: Date(),
+                startDate: startDate,
+                endDate: endDate,
                 apiKey: apiKey,
                 page: page,
                 pageSize: pageSize
@@ -122,8 +151,8 @@ final class CursorUsageAdapter: UsageAdapter {
         let (data, response) = try await session.data(for: request)
         guard let httpResponse = response as? HTTPURLResponse,
               200..<300 ~= httpResponse.statusCode else {
-            let message = String(data: data, encoding: .utf8) ?? "Cursor API request failed."
-            throw UsageAdapterError.unavailable(message)
+            let statusCode = (response as? HTTPURLResponse)?.statusCode
+            throw UsageAdapterError.unavailable(cursorAPIErrorMessage(statusCode: statusCode, data: data))
         }
 
         let value = try JSONSerialization.jsonObject(with: data)
@@ -183,6 +212,42 @@ final class CursorUsageAdapter: UsageAdapter {
             }
         }
         return nil
+    }
+
+    private func cursorAPIErrorMessage(statusCode: Int?, data: Data) -> String {
+        let fallback = "Cursor API failed. Check that your key is a Cursor Admin API key for a team account, then try again."
+        let statusPrefix = statusCode.map { "HTTP \($0)" } ?? "No HTTP status"
+
+        guard let root = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else {
+            let body = String(data: data, encoding: .utf8)?.trimmingCharacters(in: .whitespacesAndNewlines)
+            if let body, !body.isEmpty {
+                return "Cursor API failed (\(statusPrefix)): \(body)"
+            }
+            return "\(fallback) (\(statusPrefix))."
+        }
+
+        let code = (root["code"] as? String)?.trimmingCharacters(in: .whitespacesAndNewlines)
+        let rawMessage = (root["message"] as? String)?.trimmingCharacters(in: .whitespacesAndNewlines)
+        let genericInternalError = code == "internal" && (rawMessage == nil || rawMessage == "Error")
+
+        if statusCode == 401 || statusCode == 403 {
+            return "Cursor API rejected the key (\(statusPrefix)). Use a Cursor team Admin API key, not a personal account key."
+        }
+
+        if genericInternalError {
+            return "Cursor API returned a temporary internal error (\(statusPrefix)). Try Refresh again; if it keeps happening, verify the Admin API key has team access and remove the optional email filter."
+        }
+
+        let details = [code, rawMessage]
+            .compactMap { $0 }
+            .filter { !$0.isEmpty }
+            .joined(separator: ": ")
+
+        if details.isEmpty {
+            return "\(fallback) (\(statusPrefix))."
+        }
+
+        return "Cursor API failed (\(statusPrefix)): \(details)"
     }
 
     private func dateValue(_ value: Any?) -> Date? {

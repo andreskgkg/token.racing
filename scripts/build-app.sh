@@ -59,10 +59,17 @@ cat > "${CONTENTS_DIR}/Info.plist" <<'PLIST'
 </plist>
 PLIST
 
-xattr -cr "$BUNDLE_DIR"
-xattr -c "$BUNDLE_DIR" 2>/dev/null || true
-xattr -d com.apple.FinderInfo "$BUNDLE_DIR" 2>/dev/null || true
-xattr -d 'com.apple.fileprovider.fpfs#P' "$BUNDLE_DIR" 2>/dev/null || true
-codesign --force --deep --sign - "$BUNDLE_DIR"
+clean_bundle_metadata() {
+  xattr -cr "$BUNDLE_DIR" 2>/dev/null || true
+  xattr -c "$BUNDLE_DIR" 2>/dev/null || true
+  xattr -d com.apple.FinderInfo "$BUNDLE_DIR" 2>/dev/null || true
+  xattr -d 'com.apple.fileprovider.fpfs#P' "$BUNDLE_DIR" 2>/dev/null || true
+}
+
+clean_bundle_metadata
+if ! codesign --force --deep --sign - "$BUNDLE_DIR"; then
+  clean_bundle_metadata
+  codesign --force --deep --sign - "$BUNDLE_DIR"
+fi
 
 echo "$BUNDLE_DIR"
