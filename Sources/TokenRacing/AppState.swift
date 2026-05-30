@@ -216,7 +216,7 @@ final class AppState: ObservableObject {
         guard let profile else { return }
         do {
             let syncedProfile = try await syncClient.upsertUser(profile: profile, backendURL: data.backendURL)
-            data.profile = syncedProfile
+            data.profile = mergeLocalProfile(profile, with: syncedProfile)
             let friends = try await syncClient.fetchFriends(profile: syncedProfile, backendURL: data.backendURL)
             applySyncedFriends(friends)
             await syncAggregates()
@@ -233,6 +233,14 @@ final class AppState: ObservableObject {
             syncStatus = "Backend offline: \(error.localizedDescription)"
             rebuildLeaderboard()
         }
+    }
+
+    private func mergeLocalProfile(_ localProfile: UserProfile, with syncedProfile: UserProfile) -> UserProfile {
+        var merged = syncedProfile
+        if merged.avatarDataURL == nil {
+            merged.avatarDataURL = localProfile.avatarDataURL
+        }
+        return merged
     }
 
     func setTimeframe(_ timeframe: Timeframe) {
