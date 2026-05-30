@@ -56,8 +56,13 @@ struct OnboardingView: View {
                                 .foregroundStyle(.green)
                         } else {
                             VStack(alignment: .leading, spacing: 8) {
-                                SecureField("Cursor Admin API key", text: $cursorAPIKey)
-                                    .textFieldStyle(.roundedBorder)
+                                HStack(spacing: 8) {
+                                    SecureField("Cursor Admin API key", text: $cursorAPIKey)
+                                        .textFieldStyle(.roundedBorder)
+                                    Button("Paste Key") {
+                                        cursorAPIKey = pastedText()
+                                    }
+                                }
                                 TextField("Cursor account email, optional", text: $cursorAccountEmail)
                                     .textFieldStyle(.roundedBorder)
                                 Text("Used locally to pull exact Cursor token usage. Stored in Keychain.")
@@ -99,6 +104,11 @@ struct OnboardingView: View {
             demoMode = state.demoMode
             await state.detectAdapters()
         }
+    }
+
+    private func pastedText() -> String {
+        NSPasteboard.general.string(forType: .string)?
+            .trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
     }
 }
 
@@ -239,8 +249,13 @@ struct CursorAPIKeyCard: View {
                 Text("Connect your Cursor Admin API key to see exact token usage here.")
                     .font(.callout.weight(.semibold))
 
-                SecureField("Cursor Admin API key", text: $apiKey)
-                    .textFieldStyle(.roundedBorder)
+                HStack(spacing: 8) {
+                    SecureField("Cursor Admin API key", text: $apiKey)
+                        .textFieldStyle(.roundedBorder)
+                    Button("Paste Key") {
+                        apiKey = pastedText()
+                    }
+                }
 
                 TextField("Cursor account email, optional", text: $accountEmail)
                     .textFieldStyle(.roundedBorder)
@@ -258,6 +273,11 @@ struct CursorAPIKeyCard: View {
                 }
             }
         }
+    }
+
+    private func pastedText() -> String {
+        NSPasteboard.general.string(forType: .string)?
+            .trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
     }
 }
 

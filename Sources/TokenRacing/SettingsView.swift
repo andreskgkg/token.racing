@@ -203,8 +203,13 @@ struct UsageSourceRow: View {
                 }
             } else {
                 VStack(alignment: .leading, spacing: 8) {
-                    SecureField("Cursor Admin API key", text: $apiKey)
-                        .textFieldStyle(.roundedBorder)
+                    HStack(spacing: 8) {
+                        SecureField("Cursor Admin API key", text: $apiKey)
+                            .textFieldStyle(.roundedBorder)
+                        Button("Paste Key") {
+                            apiKey = pastedText()
+                        }
+                    }
                     TextField("Cursor account email, optional", text: $accountEmail)
                         .textFieldStyle(.roundedBorder)
                     Button("Connect Cursor API") {
@@ -221,6 +226,11 @@ struct UsageSourceRow: View {
                 .font(.caption)
                 .foregroundStyle(.secondary)
         }
+    }
+
+    private func pastedText() -> String {
+        NSPasteboard.general.string(forType: .string)?
+            .trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
     }
 
     private var connectionBadge: some View {
