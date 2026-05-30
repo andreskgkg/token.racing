@@ -9,6 +9,7 @@ final class AppState: ObservableObject {
     @Published var leaderboardRows: [LeaderboardRow] = []
     @Published var syncStatus: String = "Local only"
     @Published var isRefreshing = false
+    @Published var apiKeyConnections: [CodingApp: Bool] = [:]
 
     private let store: LocalStore
     private let syncClient: SyncClient
@@ -18,6 +19,7 @@ final class AppState: ObservableObject {
         self.store = store
         self.syncClient = syncClient
         data = store.load()
+        refreshAPIKeyConnections()
         rebuildLeaderboard()
     }
 
@@ -26,6 +28,7 @@ final class AppState: ObservableObject {
     var backendURL: String { data.backendURL }
     var enabledApps: Set<CodingApp> { data.sourceSettings.enabledApps }
     var customPaths: [CodingApp: String] { data.sourceSettings.customPaths }
+    var apiAccountEmails: [CodingApp: String] { data.sourceSettings.apiAccountEmails ?? [:] }
 
     var currentBreakdown: [CodingApp: Int] {
         breakdown(for: selectedTimeframe)
@@ -64,6 +67,45 @@ final class AppState: ObservableObject {
     func setBackendURL(_ backendURL: String) {
         data.backendURL = backendURL.trimmingCharacters(in: .whitespacesAndNewlines)
         saveAndRefreshMenuTitle()
+    }
+
+    func saveAPIConnection(app: CodingApp, apiKey: String, accountEmail: String? = nil) {
+        let trimmedKey = apiKey.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmedKey.isEmpty else { return }
+
+        do {
+            try ConnectionSecrets.saveAPIKey(trimmedKey, for: app)
+            setAPIAccountEmail(accountEmail, for: app)
+            refreshAPIKeyConnections()
+            Task { await detectAdapters(); await refreshUsage() }
+        } catch {
+            syncStatus = error.localizedDescription
+        }
+    }
+
+    func removeAPIConnection(app: CodingApp) {
+        ConnectionSecrets.deleteAPIKey(for: app)
+        setAPIAccountEmail(nil, for: app)
+        refreshAPIKeyConnections()
+        Task { await detectAdapters(); await refreshUsage() }
+    }
+
+    func setAPIAccountEmail(_ email: String?, for app: CodingApp) {
+        var emails = data.sourceSettings.apiAccountEmails ?? [:]
+        let normalized = email?.trimmingCharacters(in: .whitespacesAndNewlines).lowercased() ?? ""
+        if normalized.isEmpty {
+            emails.removeValue(forKey: app)
+        } else {
+            emails[app] = normalized
+        }
+        data.sourceSettings.apiAccountEmails = emails
+        saveAndRefreshMenuTitle()
+    }
+
+    func refreshAPIKeyConnections() {
+        apiKeyConnections = Dictionary(uniqueKeysWithValues: CodingApp.allCases.map {
+            ($0, ConnectionSecrets.hasAPIKey(for: $0))
+        })
     }
 
     func setProfileAvatarDataURL(_ avatarDataURL: String?) {

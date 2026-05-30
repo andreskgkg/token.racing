@@ -125,10 +125,12 @@ struct AdapterAvailability: Codable, Equatable {
 struct UsageSourceSettings: Codable, Equatable {
     var enabledApps: Set<CodingApp>
     var customPaths: [CodingApp: String]
+    var apiAccountEmails: [CodingApp: String]?
 
     static let empty = UsageSourceSettings(
         enabledApps: Set(CodingApp.allCases),
-        customPaths: [:]
+        customPaths: [:],
+        apiAccountEmails: [:]
     )
 }
 
