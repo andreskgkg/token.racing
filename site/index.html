@@ -1,0 +1,378 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Token Racing</title>
+    <meta
+      name="description"
+      content="A tiny macOS menu bar app for racing friends on AI coding assistant token usage."
+    />
+    <style>
+      :root {
+        color-scheme: light dark;
+        --bg: #f7f4ed;
+        --card: rgba(255, 255, 255, 0.72);
+        --text: #171717;
+        --muted: #68645d;
+        --border: rgba(23, 23, 23, 0.12);
+        --accent: #f05a28;
+      }
+
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --bg: #11100f;
+          --card: rgba(255, 255, 255, 0.08);
+          --text: #f8f3eb;
+          --muted: #b8afa3;
+          --border: rgba(255, 255, 255, 0.14);
+          --accent: #ff7448;
+        }
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        font-family:
+          ui-sans-serif,
+          system-ui,
+          -apple-system,
+          BlinkMacSystemFont,
+          "SF Pro Display",
+          "Helvetica Neue",
+          Arial,
+          sans-serif;
+        background:
+          radial-gradient(circle at top left, rgba(240, 90, 40, 0.18), transparent 34rem),
+          var(--bg);
+        color: var(--text);
+      }
+
+      main {
+        width: min(1060px, calc(100% - 32px));
+        margin: 0 auto;
+        padding: 32px 0 56px;
+      }
+
+      nav {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+        margin-bottom: 72px;
+      }
+
+      .brand {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-weight: 750;
+        letter-spacing: -0.02em;
+      }
+
+      .flag {
+        display: grid;
+        width: 34px;
+        height: 34px;
+        place-items: center;
+        border: 1px solid var(--border);
+        border-radius: 11px;
+        background: var(--card);
+      }
+
+      .hero {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) 360px;
+        align-items: center;
+        gap: 52px;
+      }
+
+      h1 {
+        max-width: 720px;
+        margin: 0;
+        font-size: clamp(44px, 8vw, 88px);
+        line-height: 0.92;
+        letter-spacing: -0.075em;
+      }
+
+      .subhead {
+        max-width: 620px;
+        margin: 24px 0 0;
+        color: var(--muted);
+        font-size: clamp(18px, 2vw, 22px);
+        line-height: 1.45;
+      }
+
+      .actions {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 14px;
+        margin-top: 34px;
+      }
+
+      a {
+        color: inherit;
+      }
+
+      .button {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 48px;
+        padding: 0 20px;
+        border-radius: 999px;
+        background: var(--text);
+        color: var(--bg);
+        font-weight: 700;
+        text-decoration: none;
+      }
+
+      .secondary {
+        color: var(--muted);
+        font-size: 14px;
+      }
+
+      .popover {
+        border: 1px solid var(--border);
+        border-radius: 28px;
+        background: var(--card);
+        box-shadow: 0 28px 80px rgba(0, 0, 0, 0.18);
+        overflow: hidden;
+        backdrop-filter: blur(18px);
+      }
+
+      .popover-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 20px;
+        border-bottom: 1px solid var(--border);
+      }
+
+      .title {
+        font-size: 18px;
+        font-weight: 760;
+      }
+
+      .pill {
+        padding: 6px 10px;
+        border-radius: 999px;
+        background: rgba(240, 90, 40, 0.16);
+        color: var(--accent);
+        font-size: 13px;
+        font-weight: 750;
+      }
+
+      .stats {
+        padding: 20px;
+      }
+
+      .big {
+        font-size: 44px;
+        font-weight: 800;
+        letter-spacing: -0.05em;
+      }
+
+      .label {
+        color: var(--muted);
+        font-size: 13px;
+      }
+
+      .tabs {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 6px;
+        margin-top: 18px;
+        padding: 5px;
+        border-radius: 12px;
+        background: rgba(127, 127, 127, 0.12);
+      }
+
+      .tab {
+        padding: 8px;
+        border-radius: 9px;
+        color: var(--muted);
+        font-size: 13px;
+        text-align: center;
+      }
+
+      .tab:first-child {
+        background: var(--bg);
+        color: var(--text);
+        font-weight: 700;
+      }
+
+      .rows {
+        display: grid;
+        gap: 12px;
+        padding: 0 20px 20px;
+      }
+
+      .row {
+        display: grid;
+        grid-template-columns: 34px 1fr auto;
+        align-items: center;
+        gap: 10px;
+        padding: 12px;
+        border: 1px solid var(--border);
+        border-radius: 16px;
+      }
+
+      .rank {
+        color: var(--muted);
+        font-weight: 700;
+      }
+
+      .handle {
+        font-weight: 720;
+      }
+
+      .apps {
+        margin-top: 2px;
+        color: var(--muted);
+        font-size: 12px;
+      }
+
+      .tokens {
+        font-weight: 780;
+        font-variant-numeric: tabular-nums;
+      }
+
+      .features {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 14px;
+        margin-top: 56px;
+      }
+
+      .feature {
+        padding: 18px;
+        border: 1px solid var(--border);
+        border-radius: 20px;
+        background: var(--card);
+      }
+
+      .feature strong {
+        display: block;
+        margin-bottom: 8px;
+      }
+
+      .feature span {
+        color: var(--muted);
+        line-height: 1.45;
+      }
+
+      footer {
+        margin-top: 44px;
+        color: var(--muted);
+        font-size: 13px;
+      }
+
+      @media (max-width: 850px) {
+        nav {
+          margin-bottom: 44px;
+        }
+
+        .hero,
+        .features {
+          grid-template-columns: 1fr;
+        }
+
+        .popover {
+          max-width: 390px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <nav>
+        <div class="brand"><span class="flag">🏁</span> Token Racing</div>
+        <a class="secondary" href="downloads/Token-Racing.zip">Download for Mac</a>
+      </nav>
+
+      <section class="hero">
+        <div>
+          <h1>Race friends on AI coding tokens.</h1>
+          <p class="subhead">
+            Token Racing is a tiny macOS menu bar app that shows today, week, and month leaderboards for
+            Cursor, Claude Code, and Codex token usage.
+          </p>
+          <div class="actions">
+            <a class="button" href="downloads/Token-Racing.zip">Download Token Racing</a>
+            <span class="secondary">macOS 13+ · local-first · aggregate counts only</span>
+          </div>
+        </div>
+
+        <aside class="popover" aria-label="Token Racing leaderboard preview">
+          <div class="popover-header">
+            <div>
+              <div class="title">Token Racing</div>
+              <div class="label">@andres</div>
+            </div>
+            <div class="pill">#2 Today</div>
+          </div>
+          <div class="stats">
+            <div class="label">Today's Tokens</div>
+            <div class="big">71,240</div>
+            <div class="tabs">
+              <div class="tab">Today</div>
+              <div class="tab">Week</div>
+              <div class="tab">Month</div>
+            </div>
+          </div>
+          <div class="rows">
+            <div class="row">
+              <div class="rank">#1</div>
+              <div>
+                <div class="handle">@maya</div>
+                <div class="apps">Cursor 18.3K / Claude 83.1K / Codex 7.7K</div>
+              </div>
+              <div class="tokens">109K</div>
+            </div>
+            <div class="row">
+              <div class="rank">#2</div>
+              <div>
+                <div class="handle">@andres</div>
+                <div class="apps">Cursor 21.5K / Claude 44.9K / Codex 4.8K</div>
+              </div>
+              <div class="tokens">71K</div>
+            </div>
+            <div class="row">
+              <div class="rank">#3</div>
+              <div>
+                <div class="handle">@sam</div>
+                <div class="apps">Cursor 51.2K / Claude 22.4K / Codex 14.5K</div>
+              </div>
+              <div class="tokens">88K</div>
+            </div>
+          </div>
+        </aside>
+      </section>
+
+      <section class="features">
+        <div class="feature">
+          <strong>Menu bar native</strong>
+          <span>Lives quietly in your Mac menu bar and opens into a tiny leaderboard popover.</span>
+        </div>
+        <div class="feature">
+          <strong>Friends only</strong>
+          <span>Create a handle, share an invite code, accept requests, and rank against accepted friends.</span>
+        </div>
+        <div class="feature">
+          <strong>Private by design</strong>
+          <span>Raw logs, prompts, code, file names, and API keys stay on your machine. Only aggregate token counts sync.</span>
+        </div>
+      </section>
+
+      <footer>
+        MVP build. Demo mode included. Exact extraction depends on locally available usage files.
+      </footer>
+    </main>
+  </body>
+</html>

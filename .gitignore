@@ -1,0 +1,7 @@
+.build/
+.swiftpm/
+DerivedData/
+backend/token-racing-db.json
+site/downloads/*.zip
+*.xcuserstate
+.DS_Store

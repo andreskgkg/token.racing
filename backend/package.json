@@ -1,0 +1,14 @@
+{
+  "name": "token-racing-sync",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Minimal aggregate-only sync server for Token Racing.",
+  "type": "commonjs",
+  "scripts": {
+    "start": "node server.js",
+    "test": "node smoke-test.js"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
