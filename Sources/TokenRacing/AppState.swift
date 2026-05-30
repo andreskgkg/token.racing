@@ -66,6 +66,14 @@ final class AppState: ObservableObject {
         saveAndRefreshMenuTitle()
     }
 
+    func setProfileAvatarDataURL(_ avatarDataURL: String?) {
+        guard data.profile != nil else { return }
+        data.profile?.avatarDataURL = avatarDataURL
+        saveAndRefreshMenuTitle()
+        rebuildLeaderboard()
+        Task { await registerAndRefresh() }
+    }
+
     func setAppEnabled(_ app: CodingApp, enabled: Bool) {
         if enabled {
             data.sourceSettings.enabledApps.insert(app)
@@ -229,6 +237,7 @@ final class AppState: ObservableObject {
                 LeaderboardRow(
                     id: profile.id,
                     handle: profile.handle,
+                    avatarDataURL: profile.avatarDataURL,
                     totalTokens: breakdown.values.reduce(0, +),
                     breakdown: breakdown,
                     isCurrentUser: true
@@ -239,6 +248,7 @@ final class AppState: ObservableObject {
                     LeaderboardRow(
                         id: friend.id,
                         handle: friend.handle,
+                        avatarDataURL: friend.avatarDataURL,
                         totalTokens: 0,
                         breakdown: [:],
                         isCurrentUser: false
@@ -291,6 +301,7 @@ final class AppState: ObservableObject {
                 id: $0.id,
                 handle: $0.handle,
                 inviteCode: $0.inviteCode,
+                avatarDataURL: $0.avatarDataURL,
                 status: $0.status,
                 direction: $0.direction,
                 createdAt: Date()

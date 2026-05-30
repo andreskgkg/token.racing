@@ -4,6 +4,7 @@ struct SyncedFriend: Codable, Identifiable, Equatable {
     var id: UUID
     var handle: String
     var inviteCode: String?
+    var avatarDataURL: String?
     var status: FriendRequestStatus
     var direction: FriendRequestDirection
 }
@@ -11,6 +12,7 @@ struct SyncedFriend: Codable, Identifiable, Equatable {
 struct BackendLeaderboardRow: Codable, Identifiable {
     var id: UUID
     var handle: String
+    var avatarDataURL: String?
     var totalTokens: Int
     var breakdown: [String: Int]
     var isCurrentUser: Bool
@@ -53,12 +55,18 @@ final class SyncClient {
             var userId: UUID
             var handle: String
             var inviteCode: String
+            var avatarDataURL: String?
         }
 
         return try await post(
             path: "/users",
             backendURL: backendURL,
-            body: Request(userId: profile.id, handle: profile.handle, inviteCode: profile.inviteCode)
+            body: Request(
+                userId: profile.id,
+                handle: profile.handle,
+                inviteCode: profile.inviteCode,
+                avatarDataURL: profile.avatarDataURL
+            )
         )
     }
 
@@ -138,6 +146,7 @@ final class SyncClient {
             return LeaderboardRow(
                 id: row.id,
                 handle: row.handle,
+                avatarDataURL: row.avatarDataURL,
                 totalTokens: row.totalTokens,
                 breakdown: breakdown,
                 isCurrentUser: row.isCurrentUser,

@@ -39,12 +39,20 @@ struct UserProfile: Codable, Identifiable, Equatable {
     var id: UUID
     var handle: String
     var inviteCode: String
+    var avatarDataURL: String?
     var createdAt: Date
 
-    init(id: UUID = UUID(), handle: String, inviteCode: String = InviteCode.generate(), createdAt: Date = Date()) {
+    init(
+        id: UUID = UUID(),
+        handle: String,
+        inviteCode: String = InviteCode.generate(),
+        avatarDataURL: String? = nil,
+        createdAt: Date = Date()
+    ) {
         self.id = id
         self.handle = handle
         self.inviteCode = inviteCode
+        self.avatarDataURL = avatarDataURL
         self.createdAt = createdAt
     }
 }
@@ -59,6 +67,7 @@ struct Friend: Codable, Identifiable, Equatable {
     var id: UUID
     var handle: String
     var inviteCode: String?
+    var avatarDataURL: String? = nil
     var status: FriendRequestStatus
     var direction: FriendRequestDirection
     var createdAt: Date
@@ -96,6 +105,7 @@ struct TokenAggregate: Codable, Identifiable, Equatable {
 struct LeaderboardRow: Codable, Identifiable, Equatable {
     var id: UUID
     var handle: String
+    var avatarDataURL: String? = nil
     var totalTokens: Int
     var breakdown: [CodingApp: Int]
     var isCurrentUser: Bool

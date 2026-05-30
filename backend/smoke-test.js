@@ -10,6 +10,7 @@ const port = 19000 + Math.floor(Math.random() * 1000);
 const baseURL = `http://127.0.0.1:${port}`;
 const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "token-racing-smoke-"));
 const dbPath = path.join(tempDir, "db.json");
+const avatarDataURL = "data:image/jpeg;base64,/9j/4AAQSkZJRg==";
 
 const server = childProcess.spawn(process.execPath, ["server.js"], {
   cwd: __dirname,
@@ -62,10 +63,12 @@ async function main() {
     body: JSON.stringify({
       userId: "11111111-1111-4111-8111-111111111111",
       handle: "Alice",
-      inviteCode: "ALICE123"
+      inviteCode: "ALICE123",
+      avatarDataURL
     })
   });
   assert.equal(alice.handle, "alice");
+  assert.equal(alice.avatarDataURL, avatarDataURL);
 
   const bob = await request("/users", {
     method: "POST",
@@ -90,6 +93,7 @@ async function main() {
 
   const bobFriends = await request(`/friends/${bob.id}`);
   assert.equal(bobFriends[0].direction, "inbound");
+  assert.equal(bobFriends[0].avatarDataURL, avatarDataURL);
 
   const accepted = await request("/friends/respond", {
     method: "POST",
@@ -132,6 +136,7 @@ async function main() {
   assert.equal(leaderboard[0].handle, "bob");
   assert.equal(leaderboard[0].totalTokens, 4300);
   assert.equal(leaderboard[1].handle, "alice");
+  assert.equal(leaderboard[1].avatarDataURL, avatarDataURL);
   assert.equal(leaderboard[1].breakdown.Cursor, 1200);
 
   console.log("Backend smoke test passed.");

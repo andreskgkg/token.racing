@@ -1,5 +1,6 @@
 import AppKit
 import SwiftUI
+import UniformTypeIdentifiers
 
 struct SettingsView: View {
     @EnvironmentObject private var state: AppState
@@ -21,6 +22,8 @@ struct SettingsView: View {
 
             ScrollView {
                 VStack(alignment: .leading, spacing: 18) {
+                    ProfilePictureSection()
+
                     Toggle("Demo Mode", isOn: Binding(
                         get: { state.demoMode },
                         set: { state.setDemoMode($0) }
@@ -94,6 +97,61 @@ struct SettingsView: View {
         } message: {
             Text("This removes local profile, friend, and aggregate state from this Mac. It does not delete backend data.")
         }
+    }
+}
+
+struct ProfilePictureSection: View {
+    @EnvironmentObject private var state: AppState
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text("Profile Picture")
+                .font(.headline)
+
+            HStack(spacing: 12) {
+                if let profile = state.profile {
+                    AvatarView(handle: profile.handle, avatarDataURL: profile.avatarDataURL, size: 54)
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("@\(profile.handle)")
+                            .fontWeight(.semibold)
+                        Text("Friends see this thumbnail next to your token count.")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+
+                Spacer()
+
+                Button("Choose") {
+                    chooseAvatar()
+                }
+
+                if state.profile?.avatarDataURL != nil {
+                    Button("Remove") {
+                        state.setProfileAvatarDataURL(nil)
+                    }
+                }
+            }
+        }
+        .padding(12)
+        .background(Color(nsColor: .controlBackgroundColor), in: RoundedRectangle(cornerRadius: 12))
+    }
+
+    private func chooseAvatar() {
+        let panel = NSOpenPanel()
+        panel.canChooseFiles = true
+        panel.canChooseDirectories = false
+        panel.allowsMultipleSelection = false
+        panel.allowedContentTypes = [.image]
+        panel.message = "Choose a profile picture. Token Racing stores and syncs only a small thumbnail."
+
+        guard panel.runModal() == .OK,
+              let url = panel.url,
+              let dataURL = AvatarImageData.dataURL(from: url) else {
+            return
+        }
+
+        state.setProfileAvatarDataURL(dataURL)
     }
 }
 

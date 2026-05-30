@@ -24,6 +24,7 @@ enum DemoDataProvider {
             LeaderboardRow(
                 id: profile.id,
                 handle: profile.handle,
+                avatarDataURL: profile.avatarDataURL,
                 totalTokens: currentBreakdown.values.reduce(0, +),
                 breakdown: currentBreakdown,
                 isCurrentUser: true
@@ -50,6 +51,7 @@ enum DemoDataProvider {
         return LeaderboardRow(
             id: stableID(for: handle),
             handle: handle,
+            avatarDataURL: nil,
             totalTokens: breakdown.values.reduce(0, +),
             breakdown: breakdown,
             isCurrentUser: false

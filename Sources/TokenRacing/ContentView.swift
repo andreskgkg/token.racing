@@ -98,6 +98,9 @@ struct DashboardView: View {
             .padding(.horizontal, 16)
             .padding(.bottom, 12)
 
+            AvatarTokenStrip()
+                .padding(.bottom, 8)
+
             ScrollView(showsIndicators: false) {
                 VStack(alignment: .leading, spacing: 12) {
                     CurrentUserCard()
@@ -120,7 +123,11 @@ struct DashboardView: View {
 
     private var header: some View {
         HStack(spacing: 12) {
-            AppMark()
+            if let profile = state.profile {
+                AvatarView(handle: profile.handle, avatarDataURL: profile.avatarDataURL, size: 38)
+            } else {
+                AppMark()
+            }
 
             VStack(alignment: .leading, spacing: 2) {
                 Text("Token Racing")
@@ -178,6 +185,42 @@ struct DashboardView: View {
         .padding(.horizontal, 16)
         .padding(.vertical, 10)
         .background(.regularMaterial)
+    }
+}
+
+struct AvatarTokenStrip: View {
+    @EnvironmentObject private var state: AppState
+
+    var body: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 10) {
+                ForEach(state.leaderboardRows.prefix(8)) { row in
+                    AvatarTokenPill(row: row)
+                }
+            }
+            .padding(.horizontal, 16)
+        }
+    }
+}
+
+struct AvatarTokenPill: View {
+    let row: LeaderboardRow
+
+    var body: some View {
+        HStack(spacing: 8) {
+            AvatarView(handle: row.handle, avatarDataURL: row.avatarDataURL, size: 32)
+            Text(row.totalTokens.tokenAbbreviation)
+                .font(.system(size: 16, weight: .bold, design: .rounded))
+                .monospacedDigit()
+        }
+        .padding(.leading, 5)
+        .padding(.trailing, 11)
+        .padding(.vertical, 5)
+        .background(row.isCurrentUser ? Color.accentColor.opacity(0.18) : Color.secondary.opacity(0.10), in: Capsule())
+        .overlay(
+            Capsule()
+                .stroke(row.isCurrentUser ? Color.accentColor.opacity(0.28) : Color.secondary.opacity(0.12), lineWidth: 1)
+        )
     }
 }
 
@@ -300,14 +343,16 @@ struct LeaderboardRowView: View {
 
     var body: some View {
         HStack(spacing: 11) {
-            Text("#\(row.rank)")
-                .font(.subheadline.weight(.bold).monospacedDigit())
-                .foregroundStyle(row.isCurrentUser ? Color.accentColor : Color.secondary)
-                .frame(width: 34, alignment: .leading)
+            AvatarView(handle: row.handle, avatarDataURL: row.avatarDataURL, size: 34)
 
             VStack(alignment: .leading, spacing: 3) {
-                Text("@\(row.handle)")
-                    .font(.callout.weight(row.isCurrentUser ? .bold : .semibold))
+                HStack(spacing: 6) {
+                    Text("#\(row.rank)")
+                        .font(.caption.weight(.bold).monospacedDigit())
+                        .foregroundStyle(row.isCurrentUser ? Color.accentColor : Color.secondary)
+                    Text("@\(row.handle)")
+                        .font(.callout.weight(row.isCurrentUser ? .bold : .semibold))
+                }
                 Text(appSummary)
                     .font(.caption2)
                     .foregroundStyle(.secondary)

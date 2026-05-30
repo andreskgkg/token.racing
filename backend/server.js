@@ -78,11 +78,21 @@ function inviteCode() {
   return Array.from({ length: 8 }, () => alphabet[Math.floor(Math.random() * alphabet.length)]).join("");
 }
 
+function sanitizeAvatarDataURL(value) {
+  if (!value) return null;
+  const text = String(value);
+  const isImage = /^data:image\/(png|jpeg|jpg|webp);base64,[a-zA-Z0-9+/=]+$/.test(text);
+  if (!isImage) return null;
+  if (text.length > 150_000) return null;
+  return text;
+}
+
 function userDto(user) {
   return {
     id: user.id,
     handle: user.handle,
     inviteCode: user.inviteCode,
+    avatarDataURL: user.avatarDataURL || null,
     createdAt: user.createdAt
   };
 }
@@ -99,6 +109,7 @@ function friendRowsFor(userId) {
         id: other.id,
         handle: other.handle,
         inviteCode: other.inviteCode,
+        avatarDataURL: other.avatarDataURL || null,
         status: request.status,
         direction: isInbound ? "inbound" : "outbound"
       };
@@ -138,6 +149,7 @@ function leaderboardRows(userId, timeframe) {
       return {
         id: user.id,
         handle: user.handle,
+        avatarDataURL: user.avatarDataURL || null,
         totalTokens,
         breakdown,
         isCurrentUser: id === userId,
@@ -172,10 +184,14 @@ async function handle(req, res) {
 
     const existing = db.users[id] || {};
     const code = existing.inviteCode || String(body.inviteCode || inviteCode()).toUpperCase();
+    const avatarDataURL = Object.prototype.hasOwnProperty.call(body, "avatarDataURL")
+      ? sanitizeAvatarDataURL(body.avatarDataURL)
+      : existing.avatarDataURL || null;
     db.users[id] = {
       id,
       handle,
       inviteCode: code,
+      avatarDataURL,
       createdAt: existing.createdAt || new Date().toISOString()
     };
     db.handles[handle] = id;
