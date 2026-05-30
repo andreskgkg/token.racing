@@ -30,7 +30,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         statusItem?.button?.action = #selector(togglePopover)
         updateMenuBarContent(entries: [])
 
-        popover.behavior = .transient
+        popover.behavior = .applicationDefined
         popover.contentSize = NSSize(width: 400, height: 600)
         popover.contentViewController = NSHostingController(rootView: ContentView().environmentObject(state))
         showMainWindow()
