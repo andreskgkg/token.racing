@@ -435,10 +435,23 @@ final class AppState: ObservableObject {
 
         let todayTokens = breakdown(for: .today).values.reduce(0, +)
         let sourceRows = todayMenuRows.isEmpty ? localRowsForToday(profile: profile) : todayMenuRows
-        let friendRows = sourceRows
-            .filter { !$0.isCurrentUser }
+        let syncedFriendRows = Dictionary(
+            uniqueKeysWithValues: sourceRows
+                .filter { !$0.isCurrentUser }
+                .map { ($0.id, $0) }
+        )
+        let friendRows = acceptedFriends
+            .map { friend in
+                syncedFriendRows[friend.id] ?? LeaderboardRow(
+                    id: friend.id,
+                    handle: friend.handle,
+                    avatarDataURL: friend.avatarDataURL,
+                    totalTokens: 0,
+                    breakdown: [:],
+                    isCurrentUser: false
+                )
+            }
             .sorted { $0.totalTokens > $1.totalTokens }
-            .prefix(3)
 
         return [
             MenuBarEntry(handle: profile.handle, avatarDataURL: profile.avatarDataURL, tokens: todayTokens)
