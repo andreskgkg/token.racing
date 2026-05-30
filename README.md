@@ -193,7 +193,7 @@ It rejects no raw logs because there is no endpoint for raw logs.
 
 ## Current Limitations
 
-- The app is packaged as an unsigned local `.app` bundle. It is not notarized or distributed with an installer yet.
+- The app is packaged as an ad-hoc signed beta `.app` bundle. It is not notarized or distributed with a Developer ID installer yet, so downloaded builds may still need quarantine removal on macOS.
 - Cursor exact token extraction requires a Cursor Enterprise/Admin API key. Personal Cursor accounts do not currently expose an exact token API.
 - Claude Code local token logs may be approximate depending on the Claude Code version and what final usage fields are persisted.
 - The usage parser only counts explicit token fields in local JSON/JSONL/log files.

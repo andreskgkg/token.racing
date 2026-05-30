@@ -161,6 +161,27 @@
         font-size: 14px;
       }
 
+      .install-help {
+        margin-top: 14px;
+        color: var(--muted);
+        font-size: 13px;
+        line-height: 1.5;
+      }
+
+      .install-help code {
+        display: block;
+        margin-top: 8px;
+        max-width: 720px;
+        overflow-x: auto;
+        padding: 12px 14px;
+        border: 1px solid rgba(22, 30, 44, 0.10);
+        border-radius: 16px;
+        background: rgba(255, 255, 255, 0.70);
+        color: var(--ink);
+        font-size: 12px;
+        white-space: nowrap;
+      }
+
       .visual {
         display: grid;
         gap: 14px;
@@ -341,6 +362,10 @@
             <a class="button" href="downloads/Token-Racing.zip">Download for Mac</a>
             <span class="note">Local-first. Aggregates only. No prompts or code leave your Mac.</span>
           </div>
+          <p class="install-help">
+            If macOS blocks the unsigned beta, run this once in Terminal:
+            <code>mkdir -p "$HOME/Applications" && curl -L https://token.racing/downloads/Token-Racing.zip -o /tmp/Token-Racing.zip && ditto -x -k /tmp/Token-Racing.zip "$HOME/Applications" && xattr -dr com.apple.quarantine "$HOME/Applications/Token Racing.app" && open "$HOME/Applications/Token Racing.app"</code>
+          </p>
         </div>
 
         <div class="visual" aria-label="Token Racing app preview">
