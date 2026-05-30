@@ -75,8 +75,12 @@ final class AppState: ObservableObject {
 
         do {
             try ConnectionSecrets.saveAPIKey(trimmedKey, for: app)
+            data.sourceSettings.enabledApps.insert(app)
+            data.demoMode = false
             setAPIAccountEmail(accountEmail, for: app)
             refreshAPIKeyConnections()
+            syncStatus = "\(app.shortName) connected"
+            saveAndRefreshMenuTitle()
             Task { await detectAdapters(); await refreshUsage() }
         } catch {
             syncStatus = error.localizedDescription

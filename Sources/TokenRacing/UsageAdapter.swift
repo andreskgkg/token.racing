@@ -69,8 +69,36 @@ final class CursorUsageAdapter: UsageAdapter {
     }
 
     private func fetchCursorUsageSince(date: Date, apiKey: String) async throws -> [TokenUsageEvent] {
+        let pageSize = 100
+        var page = 1
+        var hasNextPage = true
+        var events: [TokenUsageEvent] = []
+
+        while hasNextPage, page <= 100 {
+            let result = try await fetchCursorUsagePage(
+                startDate: date,
+                endDate: Date(),
+                apiKey: apiKey,
+                page: page,
+                pageSize: pageSize
+            )
+            events.append(contentsOf: result.events)
+            hasNextPage = result.hasNextPage
+            page += 1
+        }
+
+        return events
+    }
+
+    private func fetchCursorUsagePage(
+        startDate: Date,
+        endDate: Date,
+        apiKey: String,
+        page: Int,
+        pageSize: Int
+    ) async throws -> CursorUsagePage {
         guard let url = URL(string: "https://api.cursor.com/teams/filtered-usage-events") else {
-            return []
+            return CursorUsagePage(events: [], hasNextPage: false)
         }
 
         var request = URLRequest(url: url)
@@ -81,10 +109,10 @@ final class CursorUsageAdapter: UsageAdapter {
 
         let email = settings.apiAccountEmails?[app]
         var body: [String: Any] = [
-            "startDate": Int(date.timeIntervalSince1970 * 1000),
-            "endDate": Int(Date().timeIntervalSince1970 * 1000),
-            "page": 1,
-            "pageSize": 100
+            "startDate": Int(startDate.timeIntervalSince1970 * 1000),
+            "endDate": Int(endDate.timeIntervalSince1970 * 1000),
+            "page": page,
+            "pageSize": pageSize
         ]
         if let email, !email.isEmpty {
             body["email"] = email
@@ -101,26 +129,26 @@ final class CursorUsageAdapter: UsageAdapter {
         let value = try JSONSerialization.jsonObject(with: data)
         guard let root = value as? [String: Any],
               let usageEvents = root["usageEvents"] as? [[String: Any]] else {
-            return []
+            return CursorUsagePage(events: [], hasNextPage: false)
         }
 
-        return usageEvents.compactMap { event in
+        let events: [TokenUsageEvent] = usageEvents.compactMap { event in
             guard let tokenUsage = event["tokenUsage"] as? [String: Any] else {
                 return nil
             }
 
-            let tokens = [
+            let explicitTotal = intValue(tokenUsage["totalTokens"])
+            let componentTotal = [
                 "inputTokens",
                 "outputTokens",
                 "cacheWriteTokens",
                 "cacheReadTokens"
-            ].reduce(0) { partial, key in
-                partial + intValue(tokenUsage[key])
-            }
+            ].reduce(0) { partial, key in partial + intValue(tokenUsage[key]) }
+            let tokens = explicitTotal > 0 ? explicitTotal : componentTotal
             guard tokens > 0 else { return nil }
 
             let timestamp = dateValue(event["timestamp"]) ?? Date()
-            guard timestamp >= date else { return nil }
+            guard timestamp >= startDate else { return nil }
 
             return TokenUsageEvent(
                 app: app,
@@ -129,23 +157,50 @@ final class CursorUsageAdapter: UsageAdapter {
                 sourceDescription: explainDataSource()
             )
         }
+
+        let pagination = root["pagination"] as? [String: Any]
+        let hasNextPage = boolValue(pagination?["hasNextPage"])
+            ?? (intValue(pagination?["currentPage"]) < intValue(pagination?["numPages"]))
+        return CursorUsagePage(events: events, hasNextPage: hasNextPage)
     }
 
     private func intValue(_ value: Any?) -> Int {
         if let int = value as? Int { return int }
         if let double = value as? Double { return Int(double) }
+        if let number = value as? NSNumber { return number.intValue }
         if let string = value as? String { return Int(string) ?? 0 }
         return 0
+    }
+
+    private func boolValue(_ value: Any?) -> Bool? {
+        if let bool = value as? Bool { return bool }
+        if let number = value as? NSNumber { return number.boolValue }
+        if let string = value as? String {
+            switch string.lowercased() {
+            case "true", "1": return true
+            case "false", "0": return false
+            default: return nil
+            }
+        }
+        return nil
     }
 
     private func dateValue(_ value: Any?) -> Date? {
         if let string = value as? String, let milliseconds = TimeInterval(string) {
             return Date(timeIntervalSince1970: milliseconds / 1000)
         }
+        if let number = value as? NSNumber {
+            return Date(timeIntervalSince1970: number.doubleValue / 1000)
+        }
         if let number = value as? TimeInterval {
             return Date(timeIntervalSince1970: number / 1000)
         }
         return nil
+    }
+
+    private struct CursorUsagePage {
+        var events: [TokenUsageEvent]
+        var hasNextPage: Bool
     }
 }
 

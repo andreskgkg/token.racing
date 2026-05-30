@@ -126,7 +126,7 @@ Detected paths:
 - `~/Library/Application Support/Cursor/logs`
 - `~/.cursor`
 
-Cursor connects through the Cursor Admin API when the user provides an Enterprise/Admin API key in Settings. The key is stored only in macOS Keychain. Personal Cursor accounts do not currently expose a normal token-usage API, so the app does not fabricate Cursor usage when no API key is connected.
+Cursor connects through the Cursor Admin API when the user provides an Enterprise/Admin API key during onboarding, from the main popover, or in Settings. The key is stored only in macOS Keychain. Once connected, Token Racing turns off Demo Mode, polls `/teams/filtered-usage-events`, paginates through the returned usage events, and sums the exact `tokenUsage` fields locally. Personal Cursor accounts do not currently expose a normal token-usage API, so the app does not fabricate Cursor usage when no API key is connected.
 
 ### Claude Code
 
