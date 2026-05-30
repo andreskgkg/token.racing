@@ -127,7 +127,7 @@ struct DashboardView: View {
             ScrollView(showsIndicators: false) {
                 VStack(alignment: .leading, spacing: 12) {
                     CurrentUserCard()
-                    if state.enabledApps.contains(.cursor), state.apiKeyConnections[.cursor] != true {
+                    if state.apiKeyConnections[.cursor] != true {
                         CursorAPIKeyCard()
                     }
                     LeaderboardCard()
