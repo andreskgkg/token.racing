@@ -1,3 +1,4 @@
+import AppKit
 import SwiftUI
 
 struct ContentView: View {
@@ -80,6 +81,7 @@ struct OnboardingView: View {
 struct DashboardView: View {
     @EnvironmentObject private var state: AppState
     @State private var friendInput = ""
+    @State private var copiedInvite = false
     @State private var showSettings = false
 
     var body: some View {
@@ -125,13 +127,19 @@ struct DashboardView: View {
                 AppMark()
             }
 
-            VStack(alignment: .leading, spacing: 2) {
-                Text("Token Racing")
-                    .font(.headline)
+            VStack(alignment: .leading, spacing: 3) {
                 if let profile = state.profile {
                     Text("@\(profile.handle)")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
+                        .font(.headline)
+
+                    Button {
+                        copyInviteCode(profile.inviteCode)
+                    } label: {
+                        Text(copiedInvite ? "invite copied" : "click to invite friends")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                    .buttonStyle(.plain)
                 }
             }
 
@@ -150,6 +158,16 @@ struct DashboardView: View {
         .padding(.horizontal, 16)
         .padding(.top, 14)
         .padding(.bottom, 12)
+    }
+
+    private func copyInviteCode(_ inviteCode: String) {
+        NSPasteboard.general.clearContents()
+        NSPasteboard.general.setString(inviteCode, forType: .string)
+        copiedInvite = true
+
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.4) {
+            copiedInvite = false
+        }
     }
 
     private var footer: some View {
